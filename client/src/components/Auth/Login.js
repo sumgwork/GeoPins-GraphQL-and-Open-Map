@@ -3,29 +3,27 @@ import Context from "../../context";
 import { GoogleLogin } from "react-google-login";
 import { GraphQLClient } from "graphql-request";
 import { withStyles } from "@material-ui/core/styles";
-// import Typography from "@material-ui/core/Typography";
-const ME_QUERY = `{
-  me{
-    _id
-    name
-    email
-    picture
-  }
-}`;
+import { ME_QUERY } from "../../graphql/queries";
+import Typography from "@material-ui/core/Typography";
+
 const Login = ({ classes }) => {
-  const { dispatch, state } = useContext(Context);
+  const { dispatch } = useContext(Context);
 
   const onSuccess = async googleUser => {
-    const id_token = googleUser.getAuthResponse().id_token;
-    //GraphQL request library is handy for simple requests (outside apollo)
-    const client = new GraphQLClient("http://localhost:4000/graphql", {
-      headers: { authorization: id_token }
-    });
+    try {
+      const id_token = googleUser.getAuthResponse().id_token;
+      //GraphQL request library is handy for simple requests (outside apollo)
+      const client = new GraphQLClient("http://localhost:4000/graphql", {
+        headers: { authorization: id_token }
+      });
 
-    const data = await client.request(ME_QUERY);
-    dispatch({ type: "LOGIN_USER", payload: data.me });
+      const { me } = await client.request(ME_QUERY);
+      dispatch({ type: "LOGIN_USER", payload: me });
 
-    console.log("data.me", data.me);
+      console.log("me", me);
+    } catch (err) {
+      onFailure(err);
+    }
   };
 
   const onFailure = err => {
@@ -33,15 +31,24 @@ const Login = ({ classes }) => {
   };
 
   return (
-    <>
-      {state.currentUser && <p>{state.currentUser.name}</p>}
+    <div className={classes.root}>
+      <Typography
+        component="h1"
+        variant="h3"
+        gutterBottom
+        noWrap
+        style={{ color: "rgb(66, 133, 244)" }}
+      >
+        Welcome
+      </Typography>
       <GoogleLogin
         clientId="73145862053-sipamua4kvh6dlrqj6hriderd86g1d9g.apps.googleusercontent.com"
         onSuccess={onSuccess}
         onFailure={onFailure}
         isSignedIn={true}
+        theme="dark"
       />
-    </>
+    </div>
   );
 };
 
