@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useContext } from "react";
+import Context from "../../context";
 import { GoogleLogin } from "react-google-login";
 import { GraphQLClient } from "graphql-request";
 import { withStyles } from "@material-ui/core/styles";
@@ -12,17 +13,19 @@ const ME_QUERY = `{
   }
 }`;
 const Login = ({ classes }) => {
+  const { dispatch, state } = useContext(Context);
+
   const onSuccess = async googleUser => {
     const id_token = googleUser.getAuthResponse().id_token;
-    console.log("id_token", id_token);
     //GraphQL request library is handy for simple requests (outside apollo)
     const client = new GraphQLClient("http://localhost:4000/graphql", {
       headers: { authorization: id_token }
     });
 
     const data = await client.request(ME_QUERY);
+    dispatch({ type: "LOGIN_USER", payload: data.me });
 
-    console.log("data", data);
+    console.log("data.me", data.me);
   };
 
   const onFailure = err => {
@@ -30,12 +33,15 @@ const Login = ({ classes }) => {
   };
 
   return (
-    <GoogleLogin
-      clientId="73145862053-sipamua4kvh6dlrqj6hriderd86g1d9g.apps.googleusercontent.com"
-      onSuccess={onSuccess}
-      onFailure={onFailure}
-      isSignedIn={true}
-    />
+    <>
+      {state.currentUser && <p>{state.currentUser.name}</p>}
+      <GoogleLogin
+        clientId="73145862053-sipamua4kvh6dlrqj6hriderd86g1d9g.apps.googleusercontent.com"
+        onSuccess={onSuccess}
+        onFailure={onFailure}
+        isSignedIn={true}
+      />
+    </>
   );
 };
 
