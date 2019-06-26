@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { withStyles } from "@material-ui/core/styles";
+import Signout from "../components/Auth/Signout";
 import Context from "../context";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -35,6 +36,7 @@ const Header = ({ classes }) => {
             </div>
           )}
           {/* Signout button */}
+          <Signout />
         </Toolbar>
       </AppBar>
     </div>
