@@ -34,6 +34,18 @@ export default function reducer(state, { type, payload }) {
         ...state,
         draft: null
       };
+    case "GET_PINS":
+      return {
+        ...state,
+        pins: payload
+      };
+    case "CREATE_PIN": {
+      const prevPins = state.pins.filter(pin => pin._id !== payload._id);
+      return {
+        ...state,
+        pins: [...prevPins, payload]
+      };
+    }
     default:
       return state;
   }
