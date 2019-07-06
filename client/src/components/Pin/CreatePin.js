@@ -1,5 +1,8 @@
 import React, { useState, useContext } from "react";
 import Context from "../../context";
+import { CREATE_PIN_MUTATION } from "../../graphql/mutations";
+import { GraphQLClient } from "graphql-request";
+import axios from "axios";
 import { withStyles } from "@material-ui/core/styles";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
@@ -13,12 +16,32 @@ const CreatePin = ({ classes }) => {
   const [title, setTitle] = useState("");
   const [image, setImage] = useState("");
   const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const { dispatch } = useContext(Context);
+  const { state, dispatch } = useContext(Context);
 
-  const handleSubmit = event => {
-    event.preventDefault();
-    console.log(title, image, content);
+  const handleSubmit = async event => {
+    setSubmitting(true);
+    try {
+      event.preventDefault();
+      const idToken = window.gapi.auth2
+        .getAuthInstance()
+        .currentUser.get()
+        .getAuthResponse().id_token;
+      const client = new GraphQLClient("http://localhost:4000/graphql", {
+        headers: { authorization: idToken }
+      });
+      const url = await handleImageUpload();
+      const { latitude, longitude } = state.draft;
+      const variables = { title, image: url, content, latitude, longitude };
+      const { createPin } = client.request(CREATE_PIN_MUTATION, variables);
+      console.log("createPin", createPin);
+      setSubmitting(false);
+      handleDiscard();
+    } catch (err) {
+      setSubmitting(false);
+      console.log("Error creating pin", err);
+    }
   };
 
   const handleDiscard = () => {
@@ -26,6 +49,18 @@ const CreatePin = ({ classes }) => {
     setImage("");
     setContent("");
     dispatch({ type: "DISCARD_DRAFT" });
+  };
+
+  const handleImageUpload = async () => {
+    const data = new FormData();
+    data.append("file", image);
+    data.append("upload_preset", "geopins");
+    data.append("cloud_name", "sumitgovilstudy");
+    const res = await axios.post(
+      "https://api.cloudinary.com/v1_1/sumitgovilstudy/image/upload",
+      data
+    );
+    return res.data.url;
   };
 
   return (
@@ -91,7 +126,7 @@ const CreatePin = ({ classes }) => {
           className={classes.button}
           variant="contained"
           color="secondary"
-          disabled={!title.trim() || !content.trim() || !image}
+          disabled={!title.trim() || !content.trim() || !image || submitting}
           onClick={handleSubmit}
         >
           Submit
